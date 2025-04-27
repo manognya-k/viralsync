@@ -4,16 +4,16 @@ import { Container, Card } from "semantic-ui-react";
 const ContactPage = () => {
   const teamMembers = [
     {
-      name: "Teammate 1",
-      email: "email1@example.com",
+      name: "Manognya",
+      email: "manognyaks@gmail.com",
     },
     {
-      name: "Teammate 2",
-      email: "email2@example.com",
+      name: "Vardhana",
+      email: "vardhanahemsham22@gmail.com",
     },
     {
-      name: "Teammate 3",
-      email: "email3@example.com",
+      name: "Manasvi",
+      email: "berimanasvi@gmail.com",
     },
   ];
 
