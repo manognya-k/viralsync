@@ -1,12 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Container, Button, Dropdown, Divider, Icon } from "semantic-ui-react";
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, Sector } from "recharts";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { format, formatDistanceToNow } from "date-fns"; // Import date-fns functions
+import { format, formatDistanceToNow } from "date-fns";
 
-const COLORS = ["#00C49F", "#FF8042", "#FFD700"]; // Colors for positive, negative, neutral
+// Active slice rendering
+const renderActiveShape = (props) => {
+  const RADIAN = Math.PI / 180;
+  const {
+    cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
+    fill, payload, percent,
+  } = props;
+
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + 10) * cos;
+  const sy = cy + (outerRadius + 10) * sin;
+  const mx = cx + (outerRadius + 30) * cos;
+  const my = cy + (outerRadius + 30) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+  const ey = my;
+  const textAnchor = cos >= 0 ? "start" : "end";
+
+  return (
+    <g>
+      <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
+        {payload.name}
+      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 10}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">
+        {`${(percent * 100).toFixed(2)}%`}
+      </text>
+    </g>
+  );
+};
+
+const COLORS = ["#00C49F", "#FF8042", "#FFD700"];
 
 const sentimentOptions = [
   { key: "positive", text: "Positive", value: "Positive" },
@@ -15,37 +56,40 @@ const sentimentOptions = [
 ];
 
 const getSentimentColor = (sentiment) => {
-  sentiment = sentiment.toLowerCase();
-  if (sentiment === "positive") return "green";
-  if (sentiment === "negative") return "red";
-  if (sentiment === "neutral") return "gold";
-  return "black";
+  switch (sentiment.toLowerCase()) {
+    case "positive":
+      return "green";
+    case "negative":
+      return "red";
+    case "neutral":
+      return "gold";
+    default:
+      return "black";
+  }
 };
 
 const AnalyzePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { analysisData } = location.state || {};
+
   const [videoInfo, setVideoInfo] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [filteredComments, setFilteredComments] = useState([]);
+  const [filteredComments, setFilteredComments] = useState([]); // Removed 'comments' state as it's not needed
   const [showTop10, setShowTop10] = useState(true);
   const [selectedSentiment, setSelectedSentiment] = useState("All");
   const [pieData, setPieData] = useState([]);
   const [showChart, setShowChart] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(null);
 
   useEffect(() => {
     let data = analysisData;
-
     if (!data) {
-      // Try fetching from localStorage
       const storedData = localStorage.getItem("analysisData");
       if (storedData) {
         data = JSON.parse(storedData);
       }
     } else {
-      // Save fresh data to localStorage
       localStorage.setItem("analysisData", JSON.stringify(analysisData));
     }
 
@@ -56,9 +100,11 @@ const AnalyzePage = () => {
     }
 
     setVideoInfo(data.video_info);
-    setComments(data.all_comments);
+
+    // Set the filtered comments from top comments initially
     setFilteredComments(data.top_comments);
 
+    // Calculate sentiment distribution
     const sentiments = { Positive: 0, Negative: 0, Neutral: 0 };
     data.all_comments.forEach((comment) => {
       const sentiment = comment.sentiment.toLowerCase();
@@ -67,57 +113,49 @@ const AnalyzePage = () => {
       else if (sentiment === "neutral") sentiments.Neutral++;
     });
 
-    const formattedData = [
+    setPieData([
       { name: "Positive", value: sentiments.Positive },
       { name: "Negative", value: sentiments.Negative },
       { name: "Neutral", value: sentiments.Neutral },
-    ];
-    setPieData(formattedData);
+    ]);
 
     toast.success("Comments Loaded Successfully!");
   }, [analysisData, navigate]);
 
   const handleToggle = () => {
-    setShowTop10(!showTop10);
+    setShowTop10((prev) => !prev);
     setSelectedSentiment("All");
-
-    if (showTop10) {
-      setFilteredComments(comments);
-    } else {
-      const storedData = JSON.parse(localStorage.getItem("analysisData"));
-      if (storedData) {
-        setFilteredComments(storedData.top_comments);
-      }
-    }
+    const storedData = JSON.parse(localStorage.getItem("analysisData"));
+    if (!storedData) return;
+    setFilteredComments(showTop10 ? storedData.all_comments : storedData.top_comments);
   };
 
   const handleFilterChange = (e, { value }) => {
     setSelectedSentiment(value);
-
-    let source = showTop10 ? JSON.parse(localStorage.getItem("analysisData")).top_comments : comments;
+    const storedData = JSON.parse(localStorage.getItem("analysisData"));
+    const source = showTop10 ? storedData.top_comments : storedData.all_comments;
 
     if (value === "All") {
       setFilteredComments(source);
     } else {
-      const filtered = source.filter((comment) =>
-        comment.sentiment.toLowerCase() === value.toLowerCase()
+      const filtered = source.filter(
+        (comment) => comment.sentiment.toLowerCase() === value.toLowerCase()
       );
       setFilteredComments(filtered);
     }
   };
 
   const handlePieChartClick = () => {
-    setShowChart(!showChart);
+    setShowChart((prev) => !prev);
   };
+
+  const publishedDate = videoInfo ? new Date(videoInfo.published_time) : null;
+  const formattedDate = publishedDate ? format(publishedDate, "MMMM dd, yyyy") : "";
+  const timeAgo = publishedDate ? formatDistanceToNow(publishedDate, { addSuffix: true }) : "";
 
   if (!videoInfo) {
     return <div>Loading video details...</div>;
   }
-
-  // Format published date and calculate time ago
-  const publishedDate = new Date(videoInfo.published_time);
-  const formattedDate = format(publishedDate, "MMMM dd, yyyy");
-  const timeAgo = formatDistanceToNow(publishedDate, { addSuffix: true });
 
   return (
     <Container style={{ marginTop: "2rem" }}>
@@ -132,126 +170,46 @@ const AnalyzePage = () => {
         flexWrap: "wrap",
         justifyContent: "center",
         gap: "1rem",
-        marginBottom: "2rem"
+        marginBottom: "2rem",
       }}>
-        {/* Boxes for Likes, Views, etc. (unchanged) */}
-        
-        {/* Likes */}
-        <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            flex: "1",
-            minWidth: "150px",
-            background: "#f0f0f0",
-            padding: "1rem",
-            margin: "0.5rem",
-            borderRadius: "10px",
-            textAlign: "center",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Icon name="thumbs up" size="large" color="blue" />
-          <h4>Likes</h4>
-          <p>{videoInfo.likes}</p>
-        </motion.div>
-
-        {/* Views */}
-        <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            flex: "1",
-            minWidth: "150px",
-            background: "#f0f0f0",
-            padding: "1rem",
-            margin: "0.5rem",
-            borderRadius: "10px",
-            textAlign: "center",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Icon name="eye" size="large" color="green" />
-          <h4>Views</h4>
-          <p>{videoInfo.views}</p>
-        </motion.div>
-
-        {/* Channel */}
-        <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            flex: "1",
-            minWidth: "150px",
-            background: "#f0f0f0",
-            padding: "1rem",
-            margin: "0.5rem",
-            borderRadius: "10px",
-            textAlign: "center",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Icon name="user" size="large" color="purple" />
-          <h4>Channel</h4>
-          <p>{videoInfo.channel_name}</p>
-        </motion.div>
-
-        {/* Subscribers */}
-        <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            flex: "1",
-            minWidth: "150px",
-            background: "#f0f0f0",
-            padding: "1rem",
-            margin: "0.5rem",
-            borderRadius: "10px",
-            textAlign: "center",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Icon name="users" size="large" color="orange" />
-          <h4>Subscribers</h4>
-          <p>{videoInfo.subscriber_count}</p>
-        </motion.div>
-
-        {/* Published */}
-        <motion.div
-          whileHover={{ scale: 1.05, y: -5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            flex: "1",
-            minWidth: "150px",
-            background: "#f0f0f0",
-            padding: "1rem",
-            margin: "0.5rem",
-            borderRadius: "10px",
-            textAlign: "center",
-            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Icon name="calendar" size="large" color="blue" />
-          <h4>Published</h4>
-          <p>{formattedDate} ({timeAgo})</p>
-        </motion.div>
+        {[{ icon: "thumbs up", color: "blue", label: "Likes", value: videoInfo.likes },
+        { icon: "eye", color: "green", label: "Views", value: videoInfo.views },
+        { icon: "user", color: "purple", label: "Channel", value: videoInfo.channel_name },
+        { icon: "users", color: "orange", label: "Subscribers", value: videoInfo.subscriber_count },
+        { icon: "calendar", color: "blue", label: "Published", value: `${formattedDate} (${timeAgo})` },
+        ].map((item, index) => (
+          <motion.div
+            key={index}
+            whileHover={{ scale: 1.05, y: -5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            style={{
+              flex: "1",
+              minWidth: "150px",
+              background: "#f0f0f0",
+              padding: "1rem",
+              margin: "0.5rem",
+              borderRadius: "10px",
+              textAlign: "center",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Icon name={item.icon} size="large" color={item.color} />
+            <h4>{item.label}</h4>
+            <p>{item.value}</p>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Rest of your AnalyzePage remains unchanged */}
-      {/* Description button, Comments section, Pie Chart, etc. (as you already wrote) */}
-
-
-      {/* Description Button (Left aligned) */}
-      <Button 
-        size="small" 
-        color="teal" 
-        onClick={() => setShowDescription(!showDescription)}
+      {/* Description Toggle */}
+      <Button
+        size="small"
+        color="teal"
+        onClick={() => setShowDescription((prev) => !prev)}
         style={{ marginBottom: "1rem" }}
       >
         {showDescription ? "Hide Description" : "Show Description"}
       </Button>
 
-      {/* Show Description Text */}
       {showDescription && (
         <p style={{ marginTop: "1rem" }}>{videoInfo.description}</p>
       )}
@@ -266,7 +224,6 @@ const AnalyzePage = () => {
 
         <Dropdown
           selection
-          icon={<Icon name="filter" />}
           options={[{ key: "all", text: "All", value: "All" }, ...sentimentOptions]}
           onChange={handleFilterChange}
           value={selectedSentiment}
@@ -321,65 +278,45 @@ const AnalyzePage = () => {
 
       <Divider />
 
-      {/* Pie Chart Button */}
-<div style={{ textAlign: "center", marginTop: "2rem" }}>
-  <Button color="teal" onClick={handlePieChartClick}>
-    {showChart ? "Hide Pie Chart" : "Generate Pie Chart"}
-  </Button>
-</div>
+      {/* Pie Chart */}
+      <div style={{ textAlign: "center", marginTop: "2rem" }}>
+        <Button color="teal" onClick={handlePieChartClick}>
+          {showChart ? "Hide Pie Chart" : "Generate Pie Chart"}
+        </Button>
+      </div>
 
-{/* Pie Chart Animation */}
-{showChart && (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.5, rotate: -10 }}
-    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-    exit={{ opacity: 0, scale: 0.5, rotate: 10 }}
-    transition={{ duration: 0.8, ease: "easeInOut" }}
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      marginTop: "2rem",
-    }}
-  >
-    <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      transition={{ type: "spring", stiffness: 120, damping: 10 }}
-    >
-      <PieChart width={400} height={400}>
-        <Pie
-          data={pieData}
-          dataKey="value"
-          nameKey="name"
-          outerRadius={150}
-          label
-          isAnimationActive={true} // <- add this for initial pie animation
-          animationBegin={0}
-          animationDuration={1500}
-          animationEasing="ease-out"
+      {showChart && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          style={{ display: "flex", justifyContent: "center", marginTop: "2rem" }}
         >
-          {pieData.map((entry, index) => {
-            let color;
-            if (entry.name === "Positive") {
-              color = "#00C49F"; // Green
-            } else if (entry.name === "Negative") {
-              color = "#FF8042"; // Red
-            } else if (entry.name === "Neutral") {
-              color = "#FFD700"; // Yellow
-            } else {
-              color = COLORS[index % COLORS.length]; // fallback
-            }
-            return <Cell key={`cell-${index}`} fill={color} />;
-          })}
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
-    </motion.div>
-  </motion.div>
-)}
-
+          <PieChart width={400} height={400}>
+            <Pie
+              activeIndex={activeIndex}
+              activeShape={renderActiveShape}
+              data={pieData}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={150}
+              label
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              isAnimationActive
+              animationBegin={0}
+              animationDuration={1500}
+              animationEasing="ease-out"
+            >
+              {pieData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </motion.div>
+      )}
     </Container>
   );
 };

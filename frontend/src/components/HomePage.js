@@ -35,7 +35,7 @@ const HomePage = () => {
       {/* Background Video */}
       <video autoPlay loop muted className="background-video">
         <source src="/video2.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
+        <p>Your browser does not support the video tag. Please update your browser or use a different one.</p>
       </video>
 
       <Dimmer active={loading} inverted>
