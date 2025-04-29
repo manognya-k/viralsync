@@ -53,7 +53,7 @@ const InfoPage = () => {
       <Segment textAlign="center" style={{ margin: "3rem auto", width: "90%", maxWidth: "1000px" }} raised>
         <Header as="h2" color="teal">Model Architecture Diagram</Header>
         <Image
-          src="/hybrid_model_diagram.png"
+          src="/cnn_lstm_sentiment_model.png"
           alt="Hybrid CNN + LSTM Architecture"
           centered
           style={{ marginTop: "1rem", maxWidth: "100%", height: "auto" }}
