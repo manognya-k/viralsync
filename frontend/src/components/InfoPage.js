@@ -1,43 +1,63 @@
 import React from "react";
-import { Container, Header, Button, Segment } from "semantic-ui-react";
+import { Container, Header, Button, Segment, Image } from "semantic-ui-react";
 
 const InfoPage = () => {
   return (
     <Container style={{ marginTop: "2rem", marginBottom: "2rem" }}>
       <Header as="h1" textAlign="center" style={{ fontSize: "2.5rem", marginBottom: "2rem" }}>
-        Project Information
+        Hybrid CNN + LSTM Model 
       </Header>
 
-      {/* Problem Statement */}
-      <Segment padded raised>
-        <Header as="h2" color="blue">Problem Statement</Header>
+      {/* Scrollable Info Section */}
+      <Segment
+        padded
+        raised
+        style={{
+          maxHeight: "400px",
+          overflowY: "auto",
+          width: "90%",
+          maxWidth: "1000px",
+          margin: "0 auto 3rem",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+        }}
+      >
+        <Header as="h2" color="blue">Model Architecture</Header>
         <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-          The goal of this project is to overcome the drawbacks of manual analysis and conventional sentiment tools 
-          by automating the analysis of YouTube comments in order to comprehend user sentiment. 
-          Large comment volumes, a variety of languages (including code-mixed and informal language), 
-          and the difficulty for content creators to access and visualize this data are some of the issues it addresses.
+          The sentiment analysis model adapted in ViralSync is a hybrid CNN+LSTM deep learning architecture, developed
+          to harness the strengths of both extraction of local features and sequential pattern recognition.
         </p>
         <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-          The suggested system gathers comments via the YouTube API and stores them in a database for convenient access. 
-          A hybrid 1D CNN and LSTM model is used for sentiment analysis, and it is capable of recognizing local patterns 
-          and comprehending contextual sentiment, even in informal and code-mixed language. 
-          In contrast to conventional techniques, this project does not rely on pre-trained word embeddings; 
-          rather, it learns directly from the processed comments.
+          The model starts with an Input Layer, which takes the tokenized sequences of YouTube comments as input. These
+          sequences are numerical indices derived from the pre-defined vocabulary of words. The input is fed into an
+          Embedding layer, where each token is projected into a 128-dimensional dense vector, forming an embedding
+          matrix of dimensions (10000×128). This allows the model to capture semantic relationships between words.
         </p>
         <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-          The system evaluates views, likes, dislikes, and classifies comments as neutral, negative, or positive after users 
-          enter the URL of a YouTube video. Because the findings are graphically displayed as a pie chart, 
-          content producers can monitor sentiment, possibly enhance their work, and expand its audience. 
-          More accurate sentiment analysis is provided by this method, particularly for code-mixed and other non-standard languages.
+          A Conv1D layer follows, applying 64 filters of size 5 across the embedded sequences to extract local features
+          such as key phrases and emotional expressions. This is followed by a MaxPooling1D layer to reduce the spatial
+          dimensions, enhance important features, and reduce overfitting.
+        </p>
+        <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
+          The output from the convolutional block is passed to an LSTM layer with 256 memory units, which captures
+          sequential dependencies and context—especially useful for long sentences, sarcasm, and code-mixed content.
+          A dropout layer is included afterward to reduce overfitting.
+        </p>
+        <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
+          The final Dense layers include one intermediate layer with 32 units and an output layer with 3 units using
+          softmax activation to classify sentiments as positive, negative, or neutral. This hybrid approach allows
+          ViralSync to handle noisy, informal, and code-mixed user-generated content effectively.
         </p>
       </Segment>
 
-      {/* Space for Solution Diagram */}
-      <Segment placeholder textAlign="center" style={{ margin: "3rem 0" }}>
-        <Header as="h2" color="teal">Proposed Solution</Header>
-        <p style={{ fontSize: "1.1rem", color: "#555" }}>
-          (Solution diagram will be added here...)
-        </p>
+      {/* Architecture Diagram */}
+      <Segment textAlign="center" style={{ margin: "3rem auto", width: "90%", maxWidth: "1000px" }} raised>
+        <Header as="h2" color="teal">Model Architecture Diagram</Header>
+        <Image
+          src="/hybrid_model_diagram.png"
+          alt="Hybrid CNN + LSTM Architecture"
+          centered
+          style={{ marginTop: "1rem", maxWidth: "100%", height: "auto" }}
+        />
       </Segment>
 
       {/* GitHub Repo Button */}

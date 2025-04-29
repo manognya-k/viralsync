@@ -5,7 +5,7 @@ const ContactPage = () => {
   const teamMembers = [
     {
       name: "Manognya",
-      email: "manognyaks@gmail.com",
+      email: "manognyaks2435@gmail.com",
     },
     {
       name: "Vardhana",
@@ -27,12 +27,14 @@ const ContactPage = () => {
           We're here to help you. Feel free to reach out to us!
         </p>
 
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "2rem",
-          flexWrap: "wrap",
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "2rem",
+            flexWrap: "wrap",
+          }}
+        >
           {teamMembers.map((member, index) => (
             <Card
               key={index}
@@ -45,11 +47,11 @@ const ContactPage = () => {
                 background: "white",
                 textAlign: "center",
               }}
-              onMouseEnter={e => {
+              onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "scale(1.05)";
                 e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,0.15)";
               }}
-              onMouseLeave={e => {
+              onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "scale(1)";
                 e.currentTarget.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.1)";
               }}
@@ -59,7 +61,9 @@ const ContactPage = () => {
                   {member.name}
                 </Card.Header>
                 <Card.Description style={{ color: "#555", fontSize: "1rem" }}>
-                  {member.email}
+                  <a href={`mailto:${member.email}`} style={{ color: "#4183c4", textDecoration: "none" }}>
+                    {member.email}
+                  </a>
                 </Card.Description>
               </Card.Content>
             </Card>
