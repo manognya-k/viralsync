@@ -10,7 +10,7 @@
 }
 
 .page-title {
-  color: white;
+  color: rgb(19, 17, 17);
   font-size: 3rem;
   font-weight: bold;
   text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
@@ -22,8 +22,8 @@
 }
 
 .analyze-button {
-  background-color: #00b5ad;
-  color: white;
+  background-color:white
+  color(srgb red green rgb(47, 47, 170));
   border-radius: 25px;
   padding: 10px 20px;
   font-size: 1.1rem;
@@ -38,3 +38,10 @@
     flex: 1 1 100% !important;
   }
 }
+.section-heading {
+  color: #0e7490; /* Tailwind's cyan-700 or any color you prefer */
+  font-size: 1.75rem; /* Adjust size as needed */
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+

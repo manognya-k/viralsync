@@ -92,9 +92,10 @@ const HomePage = () => {
             }}
           >
             <Card.Content>
-              <Header as="h2" color="blue" textAlign="center">
-                Problem Statement
-              </Header>
+            <Header as="h2" color="teal" className="section-heading" textAlign="center">
+  Problem Statement
+</Header>
+
               <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
                 The goal of this project is to overcome the drawbacks of manual analysis and
                 conventional sentiment tools by automating the analysis of YouTube comments in order
@@ -127,7 +128,7 @@ const HomePage = () => {
             }}
           >
             <Card.Content>
-              <Header as="h3" color="teal" textAlign="center">
+              <Header as="h2" color="teal" textAlign="center">
                 Architecture Diagram
               </Header>
               <img
